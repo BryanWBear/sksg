@@ -1,68 +1,49 @@
-import pygame
-import sys
+from pathlib import Path
+import cairosvg
+import io
+from PIL import Image
+import numpy as np
+from tile import Direction
 
-BOARD_SIZE = 9
-CELL_SIZE = 50
-SCREEN_SIZE = BOARD_SIZE * CELL_SIZE
+DIRECTIONS_TO_IMG_MAP = {
+    frozenset([Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]): 'blank.svg',
+    frozenset([Direction.LEFT, Direction.RIGHT, Direction.UP]): 'down_missing.svg',
+    frozenset([Direction.LEFT, Direction.RIGHT, Direction.DOWN]): 'up_missing.svg',
+    frozenset([Direction.LEFT, Direction.UP, Direction.DOWN]): 'right_missing.svg',
+    frozenset([Direction.UP, Direction.RIGHT, Direction.DOWN]): 'left_missing.svg',
+    frozenset([Direction.LEFT, Direction.RIGHT]): 'up_down_missing.svg',
+    frozenset([Direction.LEFT, Direction.UP]): 'down_right_missing.svg',
+    frozenset([Direction.RIGHT, Direction.DOWN]): 'up_left_missing.svg',
+    frozenset([Direction.UP, Direction.DOWN]): 'left_right_missing.svg',
+    frozenset([Direction.RIGHT, Direction.UP]): 'down_left_missing.svg',
+    frozenset([Direction.DOWN, Direction.RIGHT]): 'up_right_missing.svg',
+    frozenset([]): 'full.svg',
+}
 
-killer_sudoku_puzzle = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0]
-]
+# Specify the path to your SVG file
+ASSETS_PATH = Path(__file__).resolve().parent/'assets'
 
-non_rectangular_cages = [
-    ([(0, 0), (0, 1), (1, 1), (1, 0)], 10),
-    ([(3, 0), (3, 1), (4, 2), (5, 1), (5, 0), (4, 0)], 20),
-]
 
-def draw_board(screen):
-    for i in range(1, BOARD_SIZE):
-        if i % 3 == 0:
-            pygame.draw.line(screen, (0, 0, 0), (i * CELL_SIZE, 0), (i * CELL_SIZE, SCREEN_SIZE), 4)
-            pygame.draw.line(screen, (0, 0, 0), (0, i * CELL_SIZE), (SCREEN_SIZE, i * CELL_SIZE), 4)
-        else:
-            pygame.draw.line(screen, (0, 0, 0), (i * CELL_SIZE, 0), (i * CELL_SIZE, SCREEN_SIZE), 2)
-            pygame.draw.line(screen, (0, 0, 0), (0, i * CELL_SIZE), (SCREEN_SIZE, i * CELL_SIZE), 2)
+def load_pil(filename: str) -> Image:
+    with open(ASSETS_PATH/filename, 'r') as file:
+        svg_content = file.read()
 
-    font = pygame.font.Font(None, 36)
-    for row in range(BOARD_SIZE):
-        for col in range(BOARD_SIZE):
-            if killer_sudoku_puzzle[row][col] != 0:
-                text = font.render(str(killer_sudoku_puzzle[row][col]), True, (0, 0, 0))
-                screen.blit(text, (col * CELL_SIZE + 20, row * CELL_SIZE + 10))
+    png_bytes = cairosvg.svg2png(svg_content)
 
-    for cage_vertices, cage_sum in non_rectangular_cages:
-        pygame.draw.polygon(screen, (200, 200, 200), [(x * CELL_SIZE, y * CELL_SIZE) for x, y in cage_vertices], 0)
-        pygame.draw.lines(screen, (0, 0, 0), False, [(x * CELL_SIZE, y * CELL_SIZE) for x, y in cage_vertices], 2)
+    # Open the PNG image as a PIL Image
+    pil_image = Image.open(io.BytesIO(png_bytes))
+    return pil_image
 
-        cage_text = font.render(str(cage_sum), True, (0, 0, 0))
-        screen.blit(cage_text, (sum(x for x, _ in cage_vertices) * CELL_SIZE / len(cage_vertices) + 10,
-                                sum(y for _, y in cage_vertices) * CELL_SIZE / len(cage_vertices)))
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((SCREEN_SIZE, SCREEN_SIZE))
-    pygame.display.set_caption("Killer Sudoku Board")
+DIRECTIONS_TO_IMG_MAP = {key: load_pil(filename) for key, filename in DIRECTIONS_TO_IMG_MAP.items()}
 
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        screen.fill((255, 255, 255))
-        draw_board(screen)
-        pygame.display.flip()
-
-    pygame.quit()
-    sys.exit()
-
-if __name__ == "__main__":
-    main()
+# Create a 3x3 grid of square images
+# grid_rows = 3
+# grid_cols = 3
+# image_size = 200
+#
+# im_array = np.array(pil_image)
+# new_im = Image.fromarray(np.concatenate([im_array, im_array]))
+# background = Image.new("L", new_im.size, 255)
+# background.paste(new_im, (0, 0), new_im)
+# background.save('test.png')

@@ -2,6 +2,7 @@ from tile import Tile, Direction
 from cage import Cage
 from typing import List
 import numpy as np
+import copy
 
 class Board:
     def __init__(self, board_size=4) -> None:
@@ -66,4 +67,9 @@ class Board:
                 new_idx = (row, column + 1)
             elif direction == Direction.UP:
                 new_idx = (row - 1, column)
+            new_cage_copy = copy.deepcopy(self.tile_to_cage_mapping[new_idx])
+            old_cage_copy = copy.deepcopy(self.tile_to_cage_mapping[tile_idx])
             self.combine_two_cages(tile_idx, new_idx)
+
+            return new_cage_copy, old_cage_copy
+        return None, None
