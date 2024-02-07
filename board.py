@@ -55,21 +55,33 @@ class Board:
             self.tile_to_cage_mapping[tile] = old_cage
     
     def connect_cages(self, tile_idx: (int, int), directions):
+        old_tile_state = {}
         for direction in directions:
             if not directions[direction]:
                 continue
             row, column = tile_idx
             if direction == Direction.DOWN:
                 new_idx = (row + 1, column)
+                old_tile_state[new_idx] = self.tiles[new_idx].direction_connections.copy()
+                self.tiles[new_idx].direction_connections[Direction.UP] = True
             elif direction == Direction.LEFT:
                 new_idx = (row, column - 1)
+                old_tile_state[new_idx] = self.tiles[new_idx].direction_connections.copy()
+                self.tiles[new_idx].direction_connections[Direction.RIGHT] = True
             elif direction == Direction.RIGHT:
                 new_idx = (row, column + 1)
+                old_tile_state[new_idx] = self.tiles[new_idx].direction_connections.copy()
+                self.tiles[new_idx].direction_connections[Direction.LEFT] = True
             elif direction == Direction.UP:
                 new_idx = (row - 1, column)
+                old_tile_state[new_idx] = self.tiles[new_idx].direction_connections.copy()
+                self.tiles[new_idx].direction_connections[Direction.DOWN] = True
             new_cage_copy = copy.deepcopy(self.tile_to_cage_mapping[new_idx])
             old_cage_copy = copy.deepcopy(self.tile_to_cage_mapping[tile_idx])
             self.combine_two_cages(tile_idx, new_idx)
 
-            return new_cage_copy, old_cage_copy
-        return None, None
+            return new_cage_copy, old_cage_copy, old_tile_state
+        return None, None, old_tile_state
+
+    def get_unique_cages(self):
+        return {(cage for cage in self.tile_to_cage_mapping.values())}

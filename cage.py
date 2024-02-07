@@ -3,6 +3,7 @@ class Cage:
         self.tiles = [initial_tile]
 
     def merge(self, other):
-        self.tiles = self.tiles + other.tiles
+        self.tiles = list(set(self.tiles + other.tiles))  # not sure if this is necessary, but just in case.
+
 
     

@@ -61,7 +61,10 @@ class Tile:
         prob = 1/(2**cage_size)
 
         for direction in unlocked_directions:
+            # stop rolling after 1 success, just for simplicity.
             self.direction_connections[direction] = np.random.choice([True, False], p=[prob, 1 - prob])
+            if self.direction_connections[direction]:
+                break
         
         self.collapsed = True
         return number, self.direction_connections, numbers_before_collapse, directions_before_collapse
