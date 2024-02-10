@@ -3,11 +3,8 @@ from pathlib import Path
 import cairosvg
 import io
 from PIL import Image, ImageDraw, ImageFont
-from typing import List
 import numpy as np
-from tile import Direction
-from generator import BoardGenerator
-from board import Board
+from generator import generate, Direction
 
 DIRECTIONS_TO_IMG_MAP = {
     frozenset([Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]): 'blank.svg',
@@ -68,32 +65,29 @@ def draw_cage_sum(cage_sum, img: Image) -> Image:
     return img_copy
 
 
-def get_cage_sum(cage_tiles, board: Board) -> int:
-    return sum([list(board.tiles[tile].numbers)[0] for tile in cage_tiles])
+def get_cage_sum(cage_tiles, board) -> int:
+    return sum(board[tile].number for tile in cage_tiles)
 
 
 DIRECTIONS_TO_IMG_MAP = {key: load_pil(filename) for key, filename in DIRECTIONS_TO_IMG_MAP.items()}
 
-print('loaded assets. starting to generate board.')
-bg = BoardGenerator(4)
-board = bg.generate()
+board, cages = generate()
 
 rows = []
-for i in range(board.board_size):
+for i in range(1, 10):
     row = []
-    for j in range(board.board_size):
-        tile = board.tiles[(i, j)]
-        directions_set = frozenset([key for key, value in tile.direction_connections.items() if value])
+    for j in range(1, 10):
+        tile = board[(i, j)]
+        directions_set = frozenset(tile.directions)
         row.append(DIRECTIONS_TO_IMG_MAP[directions_set])
     rows.append(row)
 
-cages = [tuple(cage.tiles) for cage in board.tile_to_cage_mapping.values()]
-unique_cages = set(cages)
-
-for cage in unique_cages:
-    cage_sum = get_cage_sum(list(cage), board)
+for cage in cages:
+    cage_sum = get_cage_sum(cage, board)
     top_left = get_top_left_tile(cage)
     i, j = top_left
+    i -= 1
+    j -= 1
     rows[i][j] = draw_cage_sum(cage_sum, rows[i][j])
 
 rows = [np.concatenate(row, axis=1) for row in rows]
@@ -101,4 +95,4 @@ board_image = Image.fromarray(np.concatenate(rows))
 
 background = Image.new("L", board_image.size, 255)
 background.paste(board_image, (0, 0), board_image)
-background.save('test.png')
+background.save('board.png')
